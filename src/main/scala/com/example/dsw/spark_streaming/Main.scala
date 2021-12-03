@@ -1,7 +1,17 @@
 package com.example.dsw.spark_streaming
 
 object Main {
+
   def main(args : Array[String]) : Unit = {
-    /*TODO ADD YOUR CODE HERE*/
+    val app = new SparkApp()
+
+    import app.spark.implicits._
+
+    val pages = List(
+      Region("Region_1", "RU"),
+      Region("Region_2", "US"),
+      Region("Region_3", "CN"),
+    )
+    app.run(pages.toDF());
   }
 }

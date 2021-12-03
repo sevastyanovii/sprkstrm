@@ -10,8 +10,16 @@ class SparkAppTest extends AnyFunSuite {
   app.conf.set("spark.sql.shuffle.partitions", "4")
   app.attachMonitoring()
 
+  val pages = List(
+    Region("Region_1", "RU"),
+    Region("Region_2", "US"),
+    Region("Region_3", "CN"),
+  )
+
   test("sample") {
-    /*TODO ADD YOUR CODE HERE*/
+
+    import app.spark.implicits._
+    app.run(pages.toDF())
   }
 
 }
