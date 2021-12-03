@@ -2,16 +2,19 @@ package com.example.dsw.spark_streaming
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.catalyst.ScalaReflection.schemaFor
-import org.apache.spark.sql.functions.{from_json, window}
+import org.apache.spark.sql.functions.{from_json, lit, when, window}
 import org.apache.spark.sql.streaming.StreamingQueryListener
 import org.apache.spark.sql.streaming.StreamingQueryListener.{QueryProgressEvent, QueryStartedEvent, QueryTerminatedEvent}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{Column, DataFrame, SparkSession};
 
 class SparkApp(appName : String = "dws-spark-streaming") {
 
   lazy val conf : SparkConf = new SparkConf().setMaster("local[*]").setAppName(appName)
   lazy val spark : SparkSession = SparkSession.builder().config(conf).getOrCreate()
 
+  def nvl(ColIn: Column, ReplaceVal: Any): Column = {
+    when(ColIn.isNull, lit(ReplaceVal)).otherwise(ColIn)
+  }
   def attachMonitoring() {
     spark.streams.addListener(new StreamingQueryListener() {
       override def onQueryStarted(queryStarted: QueryStartedEvent): Unit = {
@@ -58,8 +61,9 @@ class SparkApp(appName : String = "dws-spark-streaming") {
     val sq = pageviews
       .join(users, pageviews("userid") === users("userid") and pageviews("timestamp") >= users("timestamp"), "leftOuter")
       .join(regions, Seq("regionid"), "leftOuter")
-      .select(pageviews("timestamp"), pageviews("userid"), users("regionid"), regions("regionname"))
-      .groupBy(window($"timestamp", "10 second", "1 second"), users("regionid"), regions("regionname"))
+      .select(pageviews("timestamp"), pageviews("userid"), users("regionid"), regions("regionname"), users("gender"))
+      .groupBy(window($"timestamp", "10 second", "1 second")
+        , users("gender"))
       .count()
       .writeStream
       .option("checkpointLocation", "c:\\tmp\\checkpoints")
@@ -69,8 +73,7 @@ class SparkApp(appName : String = "dws-spark-streaming") {
           if (!batchDF.isEmpty) {
             val path = "C:\\tmp\\foreach_batch"
             batchDF.write//.mode(SaveMode.Overwrite)
-//              .format("json")
-              .format("console")
+              .format("json")
               .save(path)
           }
         }
