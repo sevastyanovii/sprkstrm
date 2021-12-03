@@ -71,7 +71,7 @@ class SparkApp(appName : String = "dws-spark-streaming") {
       .foreachBatch{
         (batchDF: DataFrame, batchId: Long) => {
           if (!batchDF.isEmpty) {
-            val path = "C:\\tmp\\foreach_batch"
+            val path = s"C:\\tmp\\foreach_batch\\$batchId"
             batchDF.write//.mode(SaveMode.Overwrite)
               .format("json")
               .save(path)
@@ -80,7 +80,7 @@ class SparkApp(appName : String = "dws-spark-streaming") {
       }
       .start()
 
-    sq.awaitTermination(300000)
+    sq.awaitTermination(10*60*1000)
     sq.stop()
   }
 
